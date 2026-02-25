@@ -1,6 +1,9 @@
 from pydantic import BaseModel, Field, field_validator
 
 class KeywordExtractionCreate(BaseModel):
+    """
+    Pydantic-модель с описанием содержимого в теле запроса
+    """
     text: str = Field(
         ...,
         min_length=1,
@@ -17,4 +20,7 @@ class KeywordExtractionCreate(BaseModel):
         return value
     
 class KeywordExtraction(BaseModel):
+    """
+    Pydantic-модель с описанием содержимого в теле ответа
+    """
     keywords: list[str]

@@ -1,9 +1,15 @@
 import pymorphy3
 
 
-class KeywordPostProccessor:
-    def __init__ (self) -> None:
+class KeywordPostProcessor:
+    """
+    Используется для очистки сырого вывода модели
+    (удаления пустых строк, дублей, морфологических дубликатов
+        и вложенных фраз, т.е. когда короткая фраза входит в более длинную)
+    """
+    def __init__(self) -> None:
         self.morph = pymorphy3.MorphAnalyzer()
+
 
     def process(self, phrases: list[str]) -> list[str]:
         phrases = self.clean_empty(phrases)
@@ -37,6 +43,7 @@ class KeywordPostProccessor:
         lemmas = [self.lemmatize(phrase) for phrase in phrases]
         cleaned_phrases = []
 
+        # если лемма A является подстрокой леммы B и длина A < длина B, убрать A
         for i, first_lemma in enumerate(lemmas):
             keep_phrase = True
             for j, second_lemma in enumerate(lemmas):
