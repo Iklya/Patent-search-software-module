@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 
+
 class KeywordExtractionCreate(BaseModel):
     """
     Pydantic-модель с описанием содержимого в теле запроса

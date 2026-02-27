@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 
 from app.schemas.keyword_extraction_schema import KeywordExtractionCreate, KeywordExtraction
 from app.services.keyword_extraction.keyword_extraction_service import KeywordExtractionService, KeywordExtractionException
-
 from app.dependencies import get_keyword_extraction_service
+
 
 router = APIRouter(
     prefix="/keywords",

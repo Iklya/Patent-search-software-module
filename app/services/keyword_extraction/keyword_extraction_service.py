@@ -36,6 +36,7 @@ class KeywordExtractionService:
 
 
     def extract_keywords(self, text: str) -> list[str]:
+        self.validate_text_content(text)
         self.ensure_model_loaded()
 
         inputs = self.prepare_inputs(text)
@@ -67,6 +68,11 @@ class KeywordExtractionService:
             raise KeywordExtractionException("Переменая MAX_INPUT_LENGTH не определена.")
         
         return int(length_value)
+
+
+    def validate_text_content(self, text: str) -> None:
+        if not any(char.isalpha() for char in text):
+            raise KeywordExtractionException("Текст не содержит информативных данных.")
 
 
     def ensure_model_loaded(self) -> None:

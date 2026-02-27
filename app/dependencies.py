@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from app.services.keyword_extraction.keyword_extraction_service import KeywordExtractionService
 
 
