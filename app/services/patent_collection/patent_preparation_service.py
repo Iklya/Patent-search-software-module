@@ -155,18 +155,22 @@ class ParserPreparationService:
 
         return None
         
-    # TODO: переделать выбор классификаций
+        
     def extract_classifications(self, soup):
         cls = []
 
-        main = soup.select("classification-tree state-modifier")
-        if not main:
-            return cls
+        nodes = soup.select(
+            "classification-tree.classification-viewer > div > div > div > div:not([hidden])"
+        )
 
-        for m in main:
-            code = m.get("data-cpc")
+        for node in nodes:
+            mod = node.select_one("state-modifier")
+            if not mod:
+                continue
+
+            code = mod.get_text(strip=True)
             if code and code not in cls:
-                cls.append(code.strip())
+                cls.append(code)
 
         return sorted(cls)
 
