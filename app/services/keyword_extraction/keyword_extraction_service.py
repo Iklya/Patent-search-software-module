@@ -1,15 +1,15 @@
 import os
-import logging
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from dotenv import load_dotenv
 
+from app.core.logger import get_logger
 from app.services.keyword_extraction.postprocessing import KeywordPostProcessor
 
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class KeywordExtractionException(Exception):
