@@ -34,9 +34,11 @@ class ParserPreparationService:
             "publication_date": publication_date,
             "inventors": self.extract_inventors(soup),
             "classifications": self.extract_classifications(soup),
+            "citations": self.extract_citations(soup),
             "abstract": self.extract_abstract(soup),
             "claims": self.extract_claims(soup),
             "description": self.extract_description(soup),
+            "concepts": self.extract_concepts(soup),
             "source_url": source_url,
             "parsed_at": datetime.now().isoformat()
         }
@@ -175,6 +177,28 @@ class ParserPreparationService:
         return sorted(cls)
 
 
+    def extract_citations(self, soup):
+        citations = []
+
+        table_body = soup.find("div", class_="tbody style-scope patent-result")
+        if not table_body:
+            return citations
+
+        rows = table_body.find_all("div", class_="tr style-scope patent-result", recursive=False)
+        for row in rows:
+            fam_header = row.find("span", class_="famheader")
+            if fam_header and "Family To Family Citations" in fam_header.get_text(strip=True):
+                break
+
+            link = row.find("a")
+            if link:
+                patent_number = link.get_text(strip=True)
+                if patent_number:
+                    citations.append(patent_number)
+
+        return citations
+
+
     def extract_abstract(self, soup):
         tag = soup.find(["div"], class_="abstract")
         if tag:
@@ -197,3 +221,29 @@ class ParserPreparationService:
             return tag.get_text(" ", strip=True)
         
         return None
+
+
+    def extract_concepts(self, soup):
+        concepts = []
+
+        header = soup.find("h3", id="concepts")
+        if not header:
+            return concepts
+
+        table = header.find_next("div", class_="responsive-table")
+        if not table:
+            return concepts
+
+        rows = table.select("div.tbody div.tr")
+
+        for row in rows:
+            span = row.select_one("concept-mention span.style-scope.patent-result")
+            if not span:
+                continue
+
+            concept = span.get_text(strip=True)
+
+            if concept and concept not in concepts:
+                concepts.append(concept)
+
+        return concepts

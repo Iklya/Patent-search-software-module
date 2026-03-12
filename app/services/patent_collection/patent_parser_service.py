@@ -66,17 +66,21 @@ class PatentParserService:
 
     def fetch_page_html(self, url: str) -> str:
         logger.debug(f"Загрузка страницы патента: {url}")
+
         self.page.goto(url, timeout=90000, wait_until="domcontentloaded")
-        
-        try:
-            self.page.wait_for_selector(
-                "application-timeline >> div.header:text('Application')",
-                timeout=45000,
-                state="visible"
-            )
-            logger.debug("application-timeline успешно найден")
-        
-        except Exception as e:
-            logger.warning(f"Не дождались application-timeline: {str(e)}")
+
+        last_height = 0
+
+        for _ in range(10):
+            height = self.page.evaluate("document.body.scrollHeight")
+
+            if height == last_height:
+                break
+
+            last_height = height
+            self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            self.page.wait_for_timeout(1200)
+
+        logger.debug("Страница полностью прокручена")
 
         return self.page.content()

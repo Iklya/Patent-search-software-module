@@ -4,8 +4,8 @@ import json
 parser = PatentParserService()
 data = parser.parse(
     query="",
-    limit=1,
-    date_from="2014-10-20",
+    limit=2,
+    date_from="2014-10-30",
     date_to="2025-10-02"
     )
 
