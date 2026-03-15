@@ -1,6 +1,5 @@
-version: '3.8'
-
 services:
+
   backend:
     build:
       context: .
@@ -9,3 +8,61 @@ services:
       - .env
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+      - namenode
+      - datanode
+      - hdfs_init
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: patent_db
+      POSTGRES_USER: patent_user
+      POSTGRES_PASSWORD: patent_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CLUSTER_NAME=patent_cluster
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CLUSTER_NAME=patent_cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+    depends_on:
+      - namenode
+
+  hdfs_init:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs_init
+    depends_on:
+      - namenode
+    entrypoint: >
+      /bin/bash -c "
+      echo 'Инициализация HDFS...';
+      sleep 15;
+      hdfs dfs -mkdir -p /patents;
+      hdfs dfs -chmod -R 777 /patents;
+      echo 'Инициализация HDFS успешно завершена.';
+      "
+
+volumes:
+  postgres_data:
+  namenode_data:
+  datanode_data:

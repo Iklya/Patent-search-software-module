@@ -19,16 +19,14 @@ class PatentCollectionService:
         self.max_pages = 10
 
 
-    def collect_patent_links(
+    async def collect_patent_links(
         self,
         query: str,
         limit: int,
-        existing_publications: set,
         date_from: str,
         date_to: str
     ):
         collection_results = []
-        seen_publications = set(existing_publications)
 
         start_date = datetime.fromisoformat(date_from)
         end_date = datetime.fromisoformat(date_to)
@@ -40,16 +38,16 @@ class PatentCollectionService:
             strftime_date = current_date.strftime("%Y%m%d")
             logger.info(f"Поиск патентов, опубликованных {current_date.date()}.")
 
-            self.search_patents_by_date(
+            await self.search_patents_by_date(
                 collection_results,
-                seen_publications,
                 search_query,
                 strftime_date,
                 limit
             )
+
             current_date += timedelta(days=1)
 
-        logger.info(f"Собрано {len(collection_results)} новых патентов")
+        logger.info(f"Получено для сбора {len(collection_results)} новых патентов")
 
         return collection_results
     
@@ -58,10 +56,9 @@ class PatentCollectionService:
         return quote(query) if query else ""
     
 
-    def search_patents_by_date(
+    async def search_patents_by_date(
         self,
         results,
-        seen,
         query,
         strftime_date,
         limit
@@ -72,24 +69,25 @@ class PatentCollectionService:
             logger.debug(f"URL для поиска: {search_url}")
 
             try:
-                self.load_patents_page(search_url)
+                await self.load_patents_page(search_url)
                 logger.info("Страница с патентами загружена")
-            except:
+
+            except Exception as e:
                 logger.warning("Страница с патентами не загрузилась")
                 break
 
-            links = self.find_patent_links()
-            logger.info(f"Найдено ссылок на патенты: {len(links)}")
-
+            links = await self.find_patent_links()
             if not links:
                 break
 
-            if self.add_patents_to_collection(links, seen, results, limit):
+            logger.info(f"Найдено ссылок на патенты: {len(links)}")
+
+            if self.add_patents_to_collection(links, results, limit):
                 break
 
             page_index += 1
 
-            if page_index == self.max_pages:
+            if page_index >= self.max_pages:
                 logger.warning("Достигнут лимит по просматриваемым страницам")
                 break
 
@@ -115,14 +113,14 @@ class PatentCollectionService:
         return url
     
     
-    def load_patents_page(self, search_url):
-        self.page.goto(search_url, timeout=10000)
-        self.page.wait_for_selector("search-result-item", timeout=1000)
-        self.page.wait_for_timeout(2000)
+    async def load_patents_page(self, search_url):
+        await self.page.goto(search_url, timeout=10000)
+        await self.page.wait_for_selector("search-result-item", timeout=5000)
+        await self.page.wait_for_timeout(2000)
 
 
-    def find_patent_links(self):
-        paths = self.page.eval_on_selector_all(
+    async def find_patent_links(self):
+        paths = await self.page.eval_on_selector_all(
             "search-result-item state-modifier.result-title",
             "els => els.map(e => e.getAttribute('data-result'))"
         )
@@ -133,20 +131,18 @@ class PatentCollectionService:
     def add_patents_to_collection(
         self,
         links,
-        seen,
         results,
         limit
     ):
         for link in links:
             pub_num = self.extract_publication_number(link)
 
-            if not pub_num or pub_num in seen:
+            if not pub_num:
                 continue
 
             logger.debug(f"Добавлен патент: {pub_num}")
 
             results.append(link)
-            seen.add(pub_num)
 
             if len(results) >= limit:
                 return True
