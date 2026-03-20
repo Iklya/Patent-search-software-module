@@ -11,14 +11,6 @@ class PostgreSQLService:
         self.session = session
 
 
-    async def get_existing_publications(self, pub_numbers: list[str]):
-        result = await self.session.execute(
-            select(Patent.publication_number).where(Patent.publication_number.in_(pub_numbers))
-        )
-
-        return {row[0] for row in result.fetchall()}
-
-
     async def get_or_create_inventor(self, name: str):
         inventor_result = await self.session.execute(
             select(Inventor).where(Inventor.full_name == name)

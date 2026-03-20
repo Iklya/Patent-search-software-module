@@ -1,8 +1,11 @@
 from playwright.async_api import async_playwright
+from sqlalchemy import select
 
 from app.services.patent_collection.patent_collection_service import PatentCollectionService
 from app.services.patent_collection.patent_preparation_service import ParserPreparationService
 from app.services.patent_storage.patent_storage_service import PatentStorageService
+from app.services.patent_indexing.patent_indexing_service import PatentIndexingService
+from app.models.patents import Patent
 from app.core.logger import get_logger
 
 
@@ -26,6 +29,7 @@ class PatentParserService:
         
         results = []
         storage_service = PatentStorageService(session)
+        indexer = PatentIndexingService(session)
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
@@ -44,6 +48,8 @@ class PatentParserService:
                 date_to=date_to
             )
 
+            links = await self.filter_existing_links(session, links)
+
             for i, link in enumerate(links, start=1):
                 ru_html = await self.fetch_page_html(page, link)
 
@@ -54,18 +60,39 @@ class PatentParserService:
                 results.append(patent_json)
 
                 if i % 50 == 0:
-                    logger.info(f"Собрано 50 патентов.")
+                    logger.info(f"Собрано {i} патентов.")
 
             await browser.close()
 
         logger.info("Браузер закрыт")
 
         await storage_service.store_patents(results)
-        
-        logger.info(f"Сохранено патентов: {len(results)}")
+
+        await indexer.index_all_patents()
+        await indexer.es.client.close()
 
         return results
     
+
+    async def filter_existing_links(self, session, links: list[str]) -> list[str]:
+        if not links:
+            return []
+        
+        result = await session.execute(
+            select(Patent.source_url).where(Patent.source_url.in_(links))
+        )
+
+        existing = {row[0] for row in result.fetchall()}
+
+        filtered_links = [link for link in links if link not in existing]
+
+        logger.info(
+            f"Найдено {len(existing)} уже существующих патентов из {len(links)}. "
+            f"На обработку передано {len(filtered_links)} документов."
+        )
+
+        return filtered_links
+
 
     async def fetch_page_html(self, page, url: str) -> str:
         logger.debug(f"Загрузка страницы патента: {url}")

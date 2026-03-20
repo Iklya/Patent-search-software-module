@@ -18,22 +18,11 @@ class PatentStorageService:
 
 
     async def store_patents(self, patents: list[dict]):
-        seen_publications = set()
-
-        pub_numbers = [p.get("publication_number") for p in patents if p.get("publication_number")]
-
-        existing_from_db = await self.pg.get_existing_publications(pub_numbers)
-
+        stored_patents_counter = 0
         for p in patents:
             pub_number = p.get("publication_number")
 
-            if not pub_number or pub_number in seen_publications:
-                continue
-
-            seen_publications.add(pub_number)
-
-            if pub_number in existing_from_db:
-                logger.info(f"Патент уже загружен в БД: {pub_number}")
+            if not pub_number:
                 continue
 
             abstract_path, description_path, claims_path = self.hdfs.store_fulltext(p)
@@ -81,8 +70,11 @@ class PatentStorageService:
             )
 
             self.session.add(patent)
+            stored_patents_counter += 1
 
         await self.session.commit()
+
+        logger.info(f"Сохранено патентов: {stored_patents_counter}")
 
 
     def parse_date(self, value):

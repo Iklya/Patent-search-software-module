@@ -59,3 +59,11 @@ class HDFSService:
             self.client.write(path, text, encoding="utf-8")
 
         return path
+
+    
+    def read_file(self, path: str) -> str:
+        if not path:
+            return ""
+
+        with self.client.read(path, encoding="utf-8") as reader:
+            return reader.read()

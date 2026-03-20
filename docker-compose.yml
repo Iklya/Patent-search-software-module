@@ -15,6 +15,7 @@ services:
       - namenode
       - datanode
       - hdfs_init
+      - elasticsearch
 
   postgres:
     image: postgres:15
@@ -62,7 +63,19 @@ services:
       echo 'Инициализация HDFS успешно завершена.';
       "
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
 volumes:
   postgres_data:
   namenode_data:
   datanode_data:
+  es_data:
