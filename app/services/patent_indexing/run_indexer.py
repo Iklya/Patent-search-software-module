@@ -5,14 +5,10 @@ from app.core.database import async_session_maker
 
 
 async def main():
-
     async with async_session_maker() as session:
-
         indexer = PatentIndexingService(session)
 
         await indexer.index_all_patents()
-
-        await indexer.es.client.close()
 
 
 if __name__ == "__main__":

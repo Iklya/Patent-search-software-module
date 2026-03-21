@@ -7,6 +7,9 @@ from app.models.patents import Patent
 
 
 class PostgreSQLService:
+    """
+    Используется для организации хранения метаданных патентов в PostgreSQL.
+    """
     def __init__(self, session):
         self.session = session
 
@@ -54,4 +57,3 @@ class PostgreSQLService:
         self.session.add(obj)
 
         return obj
-

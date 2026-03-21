@@ -11,6 +11,10 @@ logger = get_logger(__name__)
 
 
 class PatentStorageService:
+    """
+    Используется для организации хранения передаваемых данных, разделяя их на метаданные
+    и полнотекстовые данные. Сохраняет метаданные патентов в PostgreSQL и тексты патентов в HDFS.
+    """
     def __init__(self, session):
         self.session = session
         self.hdfs = HDFSService()

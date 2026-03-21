@@ -2,9 +2,17 @@ from hdfs import InsecureClient
 
 import os
 from datetime import datetime
+from app.core.logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class HDFSService:
+    """
+    Используется для организации хранения текстов патентов в HDFS,
+    чтения полнотекстовых данных и организации структуры хранения файлов
+    """
     def __init__(self, user: str = "root"):
         url = os.getenv("HDFS_URL", "http://namenode:9870")
         self.client = InsecureClient(url, user=user)
@@ -32,6 +40,8 @@ class HDFSService:
     
 
     def build_base_dir(self, patent: dict):
+        logger.debug("Сборка директории в HDFS для патента: %s", patent)
+
         pub_number = patent.get("publication_number")
         country = patent.get("country_code")
 
@@ -49,6 +59,7 @@ class HDFSService:
 
 
     def write(self, path: str, text: str | None):
+        logger.debug("Запись файла в HDFS: %s", path)
         if not text:
             return None
 
@@ -62,6 +73,7 @@ class HDFSService:
 
     
     def read_file(self, path: str) -> str:
+        logger.debug("Чтение файла из HDFS: %s", path)
         if not path:
             return ""
 

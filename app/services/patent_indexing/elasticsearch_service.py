@@ -1,7 +1,18 @@
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
+from app.services.patent_indexing.index_mapping import INDEX_MAPPING
+from app.core.logger import get_logger
+
+
+logger = get_logger(__name__)
+
 
 class ElasticsearchService:
+    """
+    Используется для управления индексами патентов в Elasticsearch, 
+    хранения метаданных индексирования, bulk-индексации документов и
+    выполнения низкоуровневых операций Elasticsearch.
+    """
     def __init__(self):
         self.client = AsyncElasticsearch(hosts=["http://elasticsearch:9200"])
         self.index_name = "patents"
@@ -13,32 +24,25 @@ class ElasticsearchService:
         exists = await self.client.indices.exists(index=self.index_name)
 
         if not exists:
+            logger.info("Создание индекса Elasticsearch: %s", self.index_name)
+
             await self.client.indices.create(
-                index=self.index_name,
-                body={
-                    "mappings": {
-                        "properties": {
-                            "patent_id": {"type": "integer"},
-                            "publication_number": {"type": "keyword"},
-                            "application_number": {"type": "keyword"},
-                            "title": {"type": "text"},
-                            "abstract": {"type": "text"},
-                            "description": {"type": "text"},
-                            "claims": {"type": "text"},
-                            "inventors": {"type": "keyword"},
-                            "classifications": {"type": "keyword"},
-                            "filing_date": {"type": "date"},
-                            "publication_date": {"type": "date"}
-                        }
-                    }
-                }
-            )
+            index=self.index_name,
+            body=INDEX_MAPPING
+        )
+        else:
+            logger.info("Индекс %s уже существует", self.index_name)
+    
+
+    async def index_exists(self):
+        return await self.client.indices.exists(index=self.index_name)
     
 
     async def create_meta_index_if_not_exists(self):
         exists = await self.client.indices.exists(index=self.meta_index)
 
         if not exists:
+            logger.info("Создание meta индекса: %s", self.meta_index)
             await self.client.indices.create(index=self.meta_index)
 
 
@@ -51,6 +55,7 @@ class ElasticsearchService:
             return result["_source"]["last_indexed_patent_id"]
         
         except NotFoundError:
+            logger.info("Meta документ не найден. Индексирование начнется с начала.")
             return 0
 
 
@@ -62,7 +67,17 @@ class ElasticsearchService:
         )
 
 
-    async def bulk_index(self, documents):
+    async def delete_index(self):
+        logger.warning("Удаление индексов Elasticsearch")
+
+        if await self.client.indices.exists(index=self.index_name):
+            await self.client.indices.delete(index=self.index_name)
+
+        if await self.client.indices.exists(index=self.meta_index):
+            await self.client.indices.delete(index=self.meta_index)
+
+
+    async def bulk_index(self, documents: list[dict]):
         operations = []
 
         for d in documents:
@@ -75,3 +90,8 @@ class ElasticsearchService:
             operations.append(d)
 
         await self.client.bulk(operations=operations)
+
+
+    async def close(self):
+        logger.info("Закрытие клиента Elasticsearch")
+        await self.client.close()
