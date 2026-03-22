@@ -22,11 +22,15 @@ class PatentStorageService:
 
 
     async def store_patents(self, patents: list[dict]):
+        logger.info("Начато сохранение патентов.")
+
         stored_patents_counter = 0
+
         for p in patents:
             pub_number = p.get("publication_number")
 
             if not pub_number:
+                logger.warning("Пропущен патент без publication_number.")
                 continue
 
             abstract_path, description_path, claims_path = self.hdfs.store_fulltext(p)

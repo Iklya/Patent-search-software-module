@@ -19,6 +19,8 @@ class HDFSService:
 
 
     def store_fulltext(self, patent: dict):
+        logger.debug("Сохранение полнотекстовых данных патента.")
+
         base_dir = self.build_base_dir(patent)
 
         abstract_path = self.write(
@@ -40,7 +42,7 @@ class HDFSService:
     
 
     def build_base_dir(self, patent: dict):
-        logger.debug("Сборка директории в HDFS для патента: %s", patent)
+        logger.debug(f"Сборка директории в HDFS для патента: {patent}")
 
         pub_number = patent.get("publication_number")
         country = patent.get("country_code")
@@ -59,8 +61,10 @@ class HDFSService:
 
 
     def write(self, path: str, text: str | None):
-        logger.debug("Запись файла в HDFS: %s", path)
+        logger.debug(f"Запись файла в HDFS: {path}")
+
         if not text:
+            logger.warning(f"Пустой текст для записи: {path}")
             return None
 
         dir_path = os.path.dirname(path)
@@ -73,7 +77,7 @@ class HDFSService:
 
     
     def read_file(self, path: str) -> str:
-        logger.debug("Чтение файла из HDFS: %s", path)
+        logger.debug(f"Чтение файла из HDFS: {path}")
         if not path:
             return ""
 

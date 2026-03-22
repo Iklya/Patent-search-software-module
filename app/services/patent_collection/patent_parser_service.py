@@ -24,14 +24,14 @@ class PatentParserService:
         limit: int = 5,
         date_from: str = "2004-10-02",
         date_to: str = "2025-10-02",
-    ):
-        logger.info(f"Начат сбор патентов. Query='{query}', limit={limit}, date_from={date_from}, date_to={date_to}")
-        
+    ):        
         results = []
         storage_service = PatentStorageService(session)
         indexer = PatentIndexingService(session)
 
         async with async_playwright() as p:
+            logger.debug("Запуск браузера Playwright.")
+            
             browser = await p.chromium.launch(headless=True)
 
             page = await browser.new_page(
@@ -48,9 +48,13 @@ class PatentParserService:
                 date_to=date_to
             )
 
+            logger.info(f"Получено ссылок на патенты: {len(links)}")
+
             links = await self.filter_existing_links(session, links)
 
             for i, link in enumerate(links, start=1):
+                logger.debug(f"Парсинг патента {i}: {link}")
+
                 ru_html = await self.fetch_page_html(page, link)
 
                 patent_json = self.preparation_service.prepare_patent_json(
@@ -64,7 +68,7 @@ class PatentParserService:
 
             await browser.close()
 
-        logger.info("Браузер закрыт")
+        logger.info(f"Парсинг завершен. Обработано патентов: {len(results)}")
 
         await storage_service.store_patents(results)
 
@@ -111,6 +115,6 @@ class PatentParserService:
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             await page.wait_for_timeout(1200)
 
-        logger.debug("Страница полностью прокручена")
+        logger.debug("Страница полностью прокручена.")
 
         return await page.content()

@@ -1,5 +1,10 @@
 import pymorphy3
 
+from app.core.logger import get_logger
+
+
+logger = get_logger(__name__)
+
 
 class KeywordPostProcessor:
     """
@@ -12,10 +17,14 @@ class KeywordPostProcessor:
 
 
     def process(self, phrases: list[str]) -> list[str]:
+        logger.debug(f"Начата постобработка ключевых фраз: {phrases}")
+
         phrases = self.clean_empty(phrases)
         phrases = self.remove_exact_duplicates(phrases)
         phrases = self.remove_morphological_duplicates(phrases)
         phrases = self.remove_nested_phrases(phrases)
+        
+        logger.debug(f"Результат постобработки: {phrases}")
         
         return phrases
 

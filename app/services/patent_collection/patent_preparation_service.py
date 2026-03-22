@@ -15,6 +15,7 @@ class ParserPreparationService:
     """
     def prepare_patent_json(self, html: str, source_url: str):
         logger.debug(f"Подготовка данных патента: {source_url}")
+        
         soup = BeautifulSoup(html, "lxml")
 
         pub_number = self.extract_publication_number(soup)
@@ -24,6 +25,8 @@ class ParserPreparationService:
         filing_date = (timeline_dates['filing_date'])
         publication_date = (timeline_dates['publication_date'])
 
+        logger.debug(f"Патент {pub_number} успешно подготовлен.")
+        
         return {
             "publication_number": pub_number,
             "application_number": self.extract_application_number(soup),
@@ -48,18 +51,22 @@ class ParserPreparationService:
         m = re.search(r'\b([A-Z]*\d+[A-Z0-9]*)\b', soup.get_text())
         if m:
             return m.group(1)
+        else:
+            logger.warning("Не удалось извлечь publication_number из HTML.")
         
         return None
     
     
     def extract_country_kind(self, publication_number):
         if not publication_number:
-            logger.warning("Не удалось извлечь publication_number")
+            logger.warning("Publication_number не извлечен.")
             return None, None
         
         m = re.match(r'^([A-Z]*)(\d+)([A-Z0-9]*)?$', publication_number)
         if m:
             return m.group(1), m.group(3)
+        else:
+            logger.warning("Не удалось извлечь country code и kind code из HTML.")
 
         return None, None
 
@@ -68,6 +75,7 @@ class ParserPreparationService:
         dates = {'filing_date': None, 'publication_date': None}
         timeline = soup.find("application-timeline")
         if not timeline:
+            logger.warning("Не найден timeline патента.")
             return dates
 
         events = timeline.find_all("div", class_="event")

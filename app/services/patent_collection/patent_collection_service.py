@@ -26,6 +26,8 @@ class PatentCollectionService:
         date_from: str,
         date_to: str
     ):
+        logger.info(f"Начат сбор патентов. Query='{query}', limit={limit}, date_from={date_from}, date_to={date_to}")
+        
         collection_results = []
 
         start_date = datetime.fromisoformat(date_from)
@@ -47,7 +49,7 @@ class PatentCollectionService:
 
             current_date += timedelta(days=1)
 
-        logger.info(f"Получено для сбора {len(collection_results)} новых патентов")
+        logger.info(f"Сбор ссылок завершен. Найдено {len(collection_results)} патентов")
 
         return collection_results
     
@@ -63,6 +65,8 @@ class PatentCollectionService:
         strftime_date,
         limit
     ):
+        logger.debug(f"Начат поиск патентов на дату {strftime_date}")
+
         page_index = 0
         while len(results) < limit:
             search_url = self.set_search_url(query, strftime_date, page_index)
@@ -73,14 +77,14 @@ class PatentCollectionService:
                 logger.info("Страница с патентами загружена")
 
             except Exception as e:
-                logger.warning("Страница с патентами не загрузилась")
+                logger.exception("Страница с патентами не загрузилась")
                 break
 
             links = await self.find_patent_links()
             if not links:
                 break
 
-            logger.info(f"Найдено ссылок на патенты: {len(links)}")
+            logger.info(f"На текущей странице найдено {len(links)} ссылок на патенты.")
 
             if self.add_patents_to_collection(links, results, limit):
                 break
@@ -114,6 +118,8 @@ class PatentCollectionService:
     
     
     async def load_patents_page(self, search_url):
+        logger.debug(f"Загрузка страницы поиска: {search_url}")
+        
         await self.page.goto(search_url, timeout=10000)
         await self.page.wait_for_selector("search-result-item", timeout=5000)
         await self.page.wait_for_timeout(2000)
@@ -124,6 +130,8 @@ class PatentCollectionService:
             "search-result-item state-modifier.result-title",
             "els => els.map(e => e.getAttribute('data-result'))"
         )
+
+        logger.debug(f"Извлечено ссылок со страницы: {len(paths)}")
 
         return [f"{self.base_url}/{p}" for p in paths if p]
     

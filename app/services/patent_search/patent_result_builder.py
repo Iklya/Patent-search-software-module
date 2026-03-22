@@ -22,7 +22,10 @@ class PatentResultBuilder:
 
 
     async def build_results(self, search_results: list[dict]) -> list[dict]:
+        logger.info("Начата сборка результатов поиска.")
+
         if not search_results:
+            logger.warning("Список результатов поиска пуст.")
             return []
 
         patent_ids = [r["patent_id"] for r in search_results]
@@ -34,6 +37,7 @@ class PatentResultBuilder:
         for r in search_results:
             patent = patents.get(r["patent_id"])
             if not patent:
+                logger.warning(f"Патент не найден в базе данных: {r["patent_id"]}")
                 continue
 
             highlight = r.get("highlight", {})
@@ -62,12 +66,14 @@ class PatentResultBuilder:
                 "parsed_at": patent.parsed_at.isoformat() if patent.parsed_at else None
             })
 
-        logger.debug("Результаты сборки для патентов: %s", patent_ids)
+        logger.info(f"Сборка результатов завершена. Найдено патентов: {len(final_results)}")
 
         return final_results
     
 
     async def find_patents_from_database(self, patent_ids):
+        logger.debug(f"Загрузка патентов из PostgreSQL: {patent_ids}")
+
         result = await self.session.execute(
             select(Patent)
             .where(Patent.id.in_(patent_ids))
@@ -79,10 +85,16 @@ class PatentResultBuilder:
             )
         )
 
-        return {p.id: p for p in result.scalars().all()}
+        patents = {p.id: p for p in result.scalars().all()}
+
+        logger.debug(f"Получено патентов из БД: {len(patents)}")
+
+        return patents
 
     
     def apply_highlight_for_text_fields(self, patent, highlight):
+        logger.debug(f"Применение highlight для патента {patent.id}")
+
         title = self.apply_highlight(
                 patent.title,
                 highlight.get("title")
@@ -107,10 +119,14 @@ class PatentResultBuilder:
     
 
     def apply_highlight(self, original_text: str, highlight_fragments: list[str] | None):
+        logger.debug("Применение highlight к текстовому полю")
+
         if not original_text:
+            logger.warning("Оригинальный текст отсутствует.")
             return ""
 
         if not highlight_fragments:
+            logger.debug("Highlight фрагменты отсутствуют.")
             return original_text
 
         words = set()

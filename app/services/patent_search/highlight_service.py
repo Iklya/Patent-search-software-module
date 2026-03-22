@@ -1,9 +1,17 @@
+from app.core.logger import get_logger
+
+
+logger = get_logger(__name__)
+
+
 class HighlightService:
     """
     Используется для обработки результатов Elasticsearch: выполняет подсветку
     совпавших ключевых фраз в тексте и их извлечение из ответа Elasticsearch.
     """
     def add_highlight(self, query: dict) -> None:
+        logger.debug("Добавление highlight параметров в Elasticsearch query.")
+
         query["highlight"] = {
             "pre_tags": ["<mark>"],
             "post_tags": ["</mark>"],
@@ -17,7 +25,13 @@ class HighlightService:
 
 
     def extract_highlight_results(self, response) -> list[dict]:
+        logger.debug("Извлечение highlight результатов из ответа Elasticsearch.")
+
         hits = response["hits"]["hits"]
+
+        if not hits:
+            logger.warning("Elasticsearch вернул пустой список результатов")
+        
         results = []
 
         for hit in hits:
@@ -28,5 +42,7 @@ class HighlightService:
             }
 
             results.append(result)
+
+        logger.debug(f"Извлечено результатов поиска: {len(results)}")
 
         return results

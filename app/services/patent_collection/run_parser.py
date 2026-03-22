@@ -12,8 +12,8 @@ async def main():
         await parser.parse(
             session=session,
             query="",
-            limit=1,
-            date_from="2015-01-22",
+            limit=1000,
+            date_from="2015-01-26",
             date_to="2025-10-02"
         )
 

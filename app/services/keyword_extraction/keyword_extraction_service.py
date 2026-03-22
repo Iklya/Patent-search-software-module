@@ -21,7 +21,8 @@ class KeywordExtractionException(Exception):
 
 class KeywordExtractionService:
     """
-    Используется для реализации бизнес-логики, связанной с извлечением ключевых фраз из текстовых данных
+    Используется для реализации бизнес-логики, связанной с
+    извлечением ключевых фраз из текстовых данных
     """
     def __init__(self) -> None:
         self.model_path: str = self.get_model_path()
@@ -36,6 +37,8 @@ class KeywordExtractionService:
 
 
     def extract_keywords(self, text: str) -> list[str]:
+        logger.info("Запущено извлечение ключевых фраз.")
+
         self.validate_text_content(text)
         self.ensure_model_loaded()
 
@@ -43,28 +46,44 @@ class KeywordExtractionService:
         output_tokens = self.generate_keywords(inputs)
         raw_keywords = self.decode_output(output_tokens)
 
+        logger.debug(f"Сырые ключевые фразы модели: {raw_keywords}")
+
         postprocessed_keywords = self.post_processor.process(raw_keywords)
 
+        logger.debug(f"Ключевые фразы после постобработки: {postprocessed_keywords}")
+
         if not postprocessed_keywords:
-            raise KeywordExtractionException("Недостаточно данных для извлечения ключевых фраз. Пожалуйста, введите более содержательный текст.")
+            logger.exception("После постобработки не осталось ключевых фраз.")
+            raise KeywordExtractionException(
+                "Недостаточно данных для извлечения ключевых фраз. "
+                "Пожалуйста, введите более содержательный текст."
+            )
+
+        logger.info(f"Извлечено ключевых фраз: {len(postprocessed_keywords)}")
 
         return postprocessed_keywords
 
 
     def get_model_path(self) -> str:
         model_path = os.getenv("MODEL_PATH")
+
         if not model_path:
+            logger.exception("Переменная окружения MODEL_PATH не определена.")
             raise KeywordExtractionException("Переменая MODEL_PATH не определена.")
         
         if not os.path.exists(model_path):
+            logger.exception(f"Путь модели не найден: {model_path}")
             raise KeywordExtractionException(f"Путь модели не найден: {model_path}")
         
+        logger.debug(f"Используется путь модели: {model_path}")
+
         return model_path
 
 
     def get_max_input_length(self) -> int:
         length_value = os.getenv("MAX_INPUT_LENGTH")
         if not length_value:
+            logger.exception(f"Переменая MAX_INPUT_LENGTH не определена.")
             raise KeywordExtractionException("Переменая MAX_INPUT_LENGTH не определена.")
         
         return int(length_value)
@@ -72,11 +91,13 @@ class KeywordExtractionService:
 
     def validate_text_content(self, text: str) -> None:
         if not any(char.isalpha() for char in text):
+            logger.exception("Текст не содержит буквенных символов.")
             raise KeywordExtractionException("Текст не содержит информативных данных.")
 
 
     def ensure_model_loaded(self) -> None:
         if self.model is None or self.tokenizer is None:
+            logger.warning("Модель не загружена. Выполняется загрузка.")
             self.load_model()
     
 
@@ -97,6 +118,8 @@ class KeywordExtractionService:
     
 
     def prepare_inputs(self, text: str) -> dict:
+        logger.debug("Токенизация входного текста.")
+
         try:
             inputs = self.tokenizer(
                 text,
@@ -112,6 +135,8 @@ class KeywordExtractionService:
     
     
     def generate_keywords(self, inputs: dict) -> torch.Tensor:
+        logger.debug("Генерация ключевых фраз моделью.")
+
         try:
             with torch.no_grad():
                 return self.model.generate(
@@ -133,10 +158,16 @@ class KeywordExtractionService:
                 skip_special_tokens=True
             )
 
+            logger.debug(f"Декодированный вывод модели: {decoded_values}")
+
             keywords = [phrase.strip() for phrase in decoded_values.split(";") if phrase.strip()]
 
             if not keywords:
-                raise KeywordExtractionException("Недостаточно данных для извлечения ключевых фраз. Пожалуйста, введите более содержательный текст.")
+                logger.exception("Модель не вернула ключевые фразы.")
+                raise KeywordExtractionException(
+                    "Недостаточно данных для извлечения ключевых фраз. "
+                    "Пожалуйста, введите более содержательный текст."
+                )
             
             return keywords
         

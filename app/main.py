@@ -28,6 +28,8 @@ async def root():
 @app.on_event("startup")
 async def startup_event():
     logger.info("Запуск приложения и загрузка ML модели.")
+    
     svc = get_keyword_extraction_service()
     svc.ensure_model_loaded()
+    
     logger.info("Модель успешно загружена.")

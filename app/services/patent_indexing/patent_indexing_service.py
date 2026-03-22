@@ -22,19 +22,20 @@ class PatentIndexingService:
 
 
     async def index_all_patents(self):
-        try:
-            logger.info("Начато индексирование патентов.")
+        logger.info("Начато индексирование патентов.")
 
+        try:
             await self.es.create_index_if_not_exists()
             await self.es.create_meta_index_if_not_exists()
 
             last_indexed_id = await self.es.get_last_indexed_id()
-            logger.info(f"Последний проиндексированный patent_id: {last_indexed_id}")
+
+            logger.debug(f"Последний проиндексированный patent_id: {last_indexed_id}")
 
             patents = await self.find_not_indexed_patents(last_indexed_id)
 
             if not patents:
-                logger.info("Новых патентов для индексирования нет.")
+                logger.warning("Новых патентов для индексирования нет.")
                 return
 
             documents = []
@@ -52,6 +53,7 @@ class PatentIndexingService:
                     logger.info(f"Проиндексировано новых патентов: {i}")
 
             if documents:
+                logger.debug("Индексирование оставшегося списка документов.")
                 await self.es.bulk_index(documents)
 
             await self.es.update_last_indexed_id(max_id)
