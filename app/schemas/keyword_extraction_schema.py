@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class KeywordExtractionCreate(BaseModel):
     """
-    Pydantic-модель с описанием содержимого в теле запроса
+    Pydantic-модель с описанием содержимого в теле запроса на извлечение ключевых фраз
     """
     text: str = Field(
         ...,
@@ -20,8 +20,9 @@ class KeywordExtractionCreate(BaseModel):
         
         return value
     
+
 class KeywordExtraction(BaseModel):
     """
-    Pydantic-модель с описанием содержимого в теле ответа
+    Pydantic-модель с описанием содержимого в теле ответа в результате извлечения ключевых фраз
     """
     keywords: list[str]

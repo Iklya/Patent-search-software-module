@@ -14,7 +14,8 @@ router = APIRouter(
 @router.post(
     "/extract",
     response_model=KeywordExtraction,
-    status_code=status.HTTP_200_OK)
+    status_code=status.HTTP_200_OK
+)
 async def keyword_extraction(
     request: KeywordExtractionCreate,
     service: KeywordExtractionService = Depends(get_keyword_extraction_service)

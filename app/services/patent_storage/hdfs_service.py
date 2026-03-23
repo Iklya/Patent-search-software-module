@@ -42,7 +42,7 @@ class HDFSService:
     
 
     def build_base_dir(self, patent: dict):
-        logger.debug(f"Сборка директории в HDFS для патента: {patent}")
+        logger.debug(f"Сборка директории в HDFS для текущего патента.")
 
         pub_number = patent.get("publication_number")
         country = patent.get("country_code")

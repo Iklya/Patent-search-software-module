@@ -2,6 +2,8 @@ from fastapi import FastAPI
 import logging
 
 from app.routers.keyword_extraction_router import router as keyword_router
+from app.routers.patent_collection_router import router as collection_router
+from app.routers.patent_search_router import router as search_router
 from app.dependencies import get_keyword_extraction_service
 
 
@@ -18,6 +20,8 @@ app = FastAPI(
 )
 
 app.include_router(keyword_router)
+app.include_router(collection_router)
+app.include_router(search_router)
 
 
 @app.get("/")

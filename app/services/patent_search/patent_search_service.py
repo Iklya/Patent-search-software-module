@@ -93,13 +93,15 @@ class PatentSearchService:
                 body=query
             )
 
+            total_hits = response["hits"]["total"]["value"]
+
             search_results = self.highlight.extract_highlight_results(response)
 
             final_results = await self.build_final_json(search_results)
 
             logger.info(f"Поиск завершен. Найдено результатов: {len(final_results)}")
 
-            return final_results
+            return total_hits, final_results
 
         finally:
             logger.info("Закрытие соединения Elasticsearch.")

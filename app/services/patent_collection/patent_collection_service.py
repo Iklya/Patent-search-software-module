@@ -65,7 +65,7 @@ class PatentCollectionService:
         strftime_date,
         limit
     ):
-        logger.debug(f"Начат поиск патентов на дату {strftime_date}")
+        logger.debug(f"Начат поиск патентов на дату {datetime.fromisoformat(strftime_date).date()}")
 
         page_index = 0
         while len(results) < limit:

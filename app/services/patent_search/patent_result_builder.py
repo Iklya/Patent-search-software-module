@@ -37,7 +37,7 @@ class PatentResultBuilder:
         for r in search_results:
             patent = patents.get(r["patent_id"])
             if not patent:
-                logger.warning(f"Патент не найден в базе данных: {r["patent_id"]}")
+                logger.warning(f"Патент не найден в базе данных: {r['patent_id']}")
                 continue
 
             highlight = r.get("highlight", {})
