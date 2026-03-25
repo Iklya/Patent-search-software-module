@@ -27,6 +27,9 @@ class KeywordExtractionService:
     def __init__(self) -> None:
         self.model_path: str = self.get_model_path()
         self.max_input_length: int = self.get_max_input_length()
+        
+        self.max_chunks = 20
+        self.chunck_overlap_ratio = 0.2
 
         self.tokenizer = None
         self.model = None
@@ -42,13 +45,19 @@ class KeywordExtractionService:
         self.validate_text_content(text)
         self.ensure_model_loaded()
 
-        inputs = self.prepare_inputs(text)
-        output_tokens = self.generate_keywords(inputs)
-        raw_keywords = self.decode_output(output_tokens)
+        chunks = self.split_into_chunks(text)
 
-        logger.debug(f"Сырые ключевые фразы модели: {raw_keywords}")
+        all_keywords = []
 
-        postprocessed_keywords = self.post_processor.process(raw_keywords)
+        for chunk in chunks:
+            try:
+                keywords = self.extract_keywords_from_chunk(chunk)
+                all_keywords.extend(keywords)
+
+            except KeywordExtractionException:
+                logger.warning("Модель не извлекла ключевые фразы из чанка.")
+
+        postprocessed_keywords = self.post_processor.process(all_keywords)
 
         logger.debug(f"Ключевые фразы после постобработки: {postprocessed_keywords}")
 
@@ -117,6 +126,37 @@ class KeywordExtractionService:
             raise RuntimeError(f"Ошибка загрузки модели: {e}")
     
 
+    
+    def split_into_chunks(self, text: str) -> list[str]:
+        tokens = self.tokenizer.encode(text, add_special_tokens=False)
+
+        max_len = self.max_input_length
+        overlap = int(max_len * self.chunck_overlap_ratio)
+
+        chunks = []
+
+        start = 0
+        while start < len(tokens) and len(chunks) < self.max_chunks:
+            end = start + max_len
+            chunk_tokens = tokens[start:end]
+
+            chunk_text = self.tokenizer.decode(chunk_tokens)
+            chunks.append(chunk_text)
+
+            start += max_len - overlap
+
+        logger.debug(f"Текст разбит на чанки: {len(chunks)}")
+
+        return chunks
+    
+
+    def extract_keywords_from_chunk(self, text: str) -> list[str]:
+        inputs = self.prepare_inputs(text)
+        output_tokens = self.generate_keywords(inputs)
+
+        return self.decode_output(output_tokens)
+    
+
     def prepare_inputs(self, text: str) -> dict:
         logger.debug("Токенизация входного текста.")
 
@@ -143,6 +183,7 @@ class KeywordExtractionService:
                     **inputs,
                     max_length=64,
                     num_beams=5,
+                    no_repeat_ngram_size=2,
                     early_stopping=True
                 )
         
@@ -177,3 +218,4 @@ class KeywordExtractionService:
         except Exception as e:
             logger.exception("Ошибка декодирования ключевых фраз.")
             raise RuntimeError(f"Ошибка декодирования: {e}")
+    

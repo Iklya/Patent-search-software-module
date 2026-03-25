@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Body
 
-from app.schemas.keyword_extraction_schema import KeywordExtractionCreate, KeywordExtraction
+from app.schemas.keyword_extraction_schema import KeywordExtraction
 from app.services.keyword_extraction.keyword_extraction_service import KeywordExtractionService, KeywordExtractionException
 from app.dependencies import get_keyword_extraction_service
 
@@ -17,11 +17,16 @@ router = APIRouter(
     status_code=status.HTTP_200_OK
 )
 async def keyword_extraction(
-    request: KeywordExtractionCreate,
+    text: str = Body(
+        ...,
+        media_type="text/plain",
+        min_length=1,
+        max_length=10000
+    ),
     service: KeywordExtractionService = Depends(get_keyword_extraction_service)
 ):
     try:
-        keywords = service.extract_keywords(request.text)
+        keywords = service.extract_keywords(text)
         return KeywordExtraction(keywords=keywords)
     
     except KeywordExtractionException as e:
