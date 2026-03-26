@@ -17,7 +17,11 @@ class PatentParserService:
     Используется для управления процессом сбора одного и более патентов
     (запуск браузера, получение ссылок на патенты и автоматизированный сбор каждого из них)
     """
-    async def parse(
+    def __init__(self):
+        self.preparation_service = ParserPreparationService()
+
+
+    async def parse_patents(
         self,
         session,
         query: str,
@@ -26,20 +30,11 @@ class PatentParserService:
         date_to: str = "2025-10-02",
     ):        
         results = []
-        storage_service = PatentStorageService(session)
-        indexer = PatentIndexingService(session)
 
-        async with async_playwright() as p:
-            logger.debug("Запуск браузера Playwright.")
-            
-            browser = await p.chromium.launch(headless=True)
-
-            page = await browser.new_page(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-            )
-
+        p, browser, page = await self.create_browser_page()
+        
+        try:
             self.collection_service = PatentCollectionService(page)
-            self.preparation_service = ParserPreparationService()
 
             links = await self.collection_service.collect_patent_links(
                 query=query,
@@ -55,10 +50,10 @@ class PatentParserService:
             for i, link in enumerate(links, start=1):
                 logger.debug(f"Парсинг патента {i}: {link}")
 
-                ru_html = await self.fetch_page_html(page, link)
+                html = await self.fetch_page_html(page, link)
 
                 patent_json = self.preparation_service.prepare_patent_json(
-                    ru_html,
+                    html,
                     link
                 )
                 results.append(patent_json)
@@ -66,17 +61,47 @@ class PatentParserService:
                 if i % 50 == 0:
                     logger.info(f"Собрано {i} патентов.")
 
-            await browser.close()
+        finally:
+            await self.close_browser(p, browser)
 
-        logger.info(f"Парсинг завершен. Обработано патентов: {len(results)}")
-
-        await storage_service.store_patents(results)
-
-        await indexer.index_all_patents()
-        await indexer.es.client.close()
+            logger.info(f"Парсинг завершен. Обработано патентов: {len(results)}")
 
         return results
     
+
+    async def parse_single_patent(self, url: str):
+        p, browser, page = await self.create_browser_page()
+
+        try:
+            html = await self.fetch_page_html(page, url)
+
+            patent_json = self.preparation_service.prepare_patent_json(
+                html,
+                url
+            )
+
+            return patent_json 
+        
+        finally: 
+            await self.close_browser(p, browser)
+
+
+    async def create_browser_page(self):
+        p = await async_playwright().start()
+
+        browser = await p.chromium.launch(headless=True)
+
+        page = await browser.new_page(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        )
+
+        return p, browser, page
+
+
+    async def close_browser(self, p, browser):
+        await browser.close()
+        await p.stop()
+
 
     async def filter_existing_links(self, session, links: list[str]) -> list[str]:
         if not links:

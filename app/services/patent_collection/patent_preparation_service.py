@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 class ParserPreparationService:
     """
-    Используется для автоматизированного сбора информации об определённом патенте
+    Используется для автоматизированного сбора информации об определённом патенте и подготовки данных
     """
     def prepare_patent_json(self, html: str, source_url: str):
         logger.debug(f"Подготовка данных патента: {source_url}")

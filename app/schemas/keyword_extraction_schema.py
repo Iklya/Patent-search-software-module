@@ -1,4 +1,8 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, HttpUrl
+
+
+class KeywordExtractionFromUrlRequest(BaseModel):
+    url: HttpUrl = Field(..., description="Ссылка на патент Google Patents")
 
 
 class KeywordExtraction(BaseModel):

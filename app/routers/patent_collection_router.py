@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.patent_collection.patent_parser_service import PatentParserService
+from app.services.patent_storage.patent_storage_service import PatentStorageService
+from app.services.patent_indexing.patent_indexing_service import PatentIndexingService
 from app.schemas.patent_collection_schema import PatentsLoadCreate
 from app.dependencies import get_patent_parser_service
 from app.db_dependency import get_db_session
@@ -23,12 +25,21 @@ async def load_patents(
     session: AsyncSession = Depends(get_db_session)
 ):
     try:
-        results = await service.parse(
-            session=session,
+        storage = PatentStorageService(session)
+        indexer = PatentIndexingService(session)
+
+        patents = await service.parse_patents(
+            session,
             **request.model_dump(mode="json")
         )
         
-        return {"message": f"Сбор {len(results)} патентов выполнен успешно."}
+        await storage.store_patents(patents)
+
+        await indexer.index_all_patents()
+
+        return {
+            "message": f"Сбор {len(patents)} патентов выполнен успешно."
+        }
 
     except ValueError as e:
         raise HTTPException(
@@ -41,3 +52,7 @@ async def load_patents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Не удалось выполнить загрузку патентов."
         )
+    
+    finally:
+        if indexer:
+            await indexer.es.client.close()

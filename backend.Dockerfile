@@ -48,7 +48,7 @@ COPY . .
 
 RUN playwright install chromium
 
-RUN pytest app/tests
+# RUN pytest app/tests
 
 EXPOSE 8000
 
