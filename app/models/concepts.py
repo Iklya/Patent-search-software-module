@@ -5,6 +5,9 @@ from app.core.database import Base
 
 
 class Concept(Base):
+    """
+    Используется для задания SQLAlchemy-модели для таблицы Concept
+    """
     __tablename__ = "concepts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

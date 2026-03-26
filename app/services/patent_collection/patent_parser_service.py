@@ -7,6 +7,7 @@ from app.services.patent_storage.patent_storage_service import PatentStorageServ
 from app.services.patent_indexing.patent_indexing_service import PatentIndexingService
 from app.models.patents import Patent
 from app.core.logger import get_logger
+from app.core.settings import settings
 
 
 logger = get_logger(__name__)
@@ -130,7 +131,7 @@ class PatentParserService:
 
         last_height = 0
 
-        for _ in range(10):
+        for _ in range(settings.playwright_scroll_iterations):
             height = await page.evaluate("document.body.scrollHeight")
 
             if height == last_height:
@@ -138,7 +139,7 @@ class PatentParserService:
 
             last_height = height
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(1200)
+            await page.wait_for_timeout(settings.playwright_scroll_wait_after)
 
         logger.debug("Страница полностью прокручена.")
 

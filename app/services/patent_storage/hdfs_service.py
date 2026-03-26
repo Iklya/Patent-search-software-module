@@ -1,8 +1,10 @@
-from hdfs import InsecureClient
-
 import os
 from datetime import datetime
+
+from hdfs import InsecureClient
+
 from app.core.logger import get_logger
+from app.core.settings import settings
 
 
 logger = get_logger(__name__)
@@ -14,8 +16,7 @@ class HDFSService:
     чтения полнотекстовых данных и организации структуры хранения файлов
     """
     def __init__(self, user: str = "root"):
-        url = os.getenv("HDFS_URL", "http://namenode:9870")
-        self.client = InsecureClient(url, user=user)
+        self.client = InsecureClient(settings.hdfs_url, user=user)
 
 
     def store_fulltext(self, patent: dict):

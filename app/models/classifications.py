@@ -5,6 +5,9 @@ from app.core.database import Base
 
 
 class Classification(Base):
+    """
+    Используется для задания SQLAlchemy-модели для таблицы Classification
+    """
     __tablename__ = "classifications"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

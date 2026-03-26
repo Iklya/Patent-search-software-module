@@ -1,13 +1,10 @@
-import os
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-from dotenv import load_dotenv
 
 from app.core.logger import get_logger
+from app.core.settings import settings
 from app.services.keyword_extraction.postprocessing import KeywordPostProcessor
 
-
-load_dotenv()
 
 logger = get_logger(__name__)
 
@@ -25,19 +22,25 @@ class KeywordExtractionService:
     извлечением ключевых фраз из текстовых данных
     """
     def __init__(self) -> None:
-        self.model_path: str = self.get_model_path()
-        self.max_input_length: int = self.get_max_input_length()
-        
-        self.max_chunks = 20
-        self.chunck_overlap_ratio = 0.2
+        self.model_path = settings.model_path
+        self.max_input_length = settings.max_user_input_length
+
+        self.max_chunks = settings.max_chunks
+        self.chunk_overlap_ratio = settings.chunk_overlap_ratio
+
+        self.generation_max_length = settings.generation_max_length
+        self.generation_num_beams = settings.generation_num_beams
+        self.generation_no_repeat_ngram_size = settings.generation_no_repeat_ngram_size
 
         self.tokenizer = None
         self.model = None
+
         self.post_processor = KeywordPostProcessor()
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"Устройство для работы с моделью выбрано: {self.device}")
 
+        logger.info(f"Устройство для работы с моделью выбрано: {self.device}")
+    
 
     def extract_keywords(self, text: str) -> list[str]:
         logger.info("Запущено извлечение ключевых фраз.")
@@ -71,32 +74,7 @@ class KeywordExtractionService:
         logger.info(f"Извлечено ключевых фраз: {len(postprocessed_keywords)}")
 
         return postprocessed_keywords
-
-
-    def get_model_path(self) -> str:
-        model_path = os.getenv("MODEL_PATH")
-
-        if not model_path:
-            logger.exception("Переменная окружения MODEL_PATH не определена.")
-            raise KeywordExtractionException("Переменая MODEL_PATH не определена.")
-        
-        if not os.path.exists(model_path):
-            logger.exception(f"Путь модели не найден: {model_path}")
-            raise KeywordExtractionException(f"Путь модели не найден: {model_path}")
-        
-        logger.debug(f"Используется путь модели: {model_path}")
-
-        return model_path
-
-
-    def get_max_input_length(self) -> int:
-        length_value = os.getenv("MAX_INPUT_LENGTH")
-        if not length_value:
-            logger.exception(f"Переменая MAX_INPUT_LENGTH не определена.")
-            raise KeywordExtractionException("Переменая MAX_INPUT_LENGTH не определена.")
-        
-        return int(length_value)
-
+    
 
     def validate_text_content(self, text: str) -> None:
         if not any(char.isalpha() for char in text):
@@ -131,7 +109,7 @@ class KeywordExtractionService:
         tokens = self.tokenizer.encode(text, add_special_tokens=False)
 
         max_len = self.max_input_length
-        overlap = int(max_len * self.chunck_overlap_ratio)
+        overlap = int(max_len * self.chunk_overlap_ratio)
 
         chunks = []
 
@@ -181,9 +159,9 @@ class KeywordExtractionService:
             with torch.no_grad():
                 return self.model.generate(
                     **inputs,
-                    max_length=64,
-                    num_beams=5,
-                    no_repeat_ngram_size=2,
+                    max_length=self.generation_max_length,
+                    num_beams=self.generation_num_beams,
+                    no_repeat_ngram_size=self.generation_no_repeat_ngram_size,
                     early_stopping=True
                 )
         
@@ -218,4 +196,3 @@ class KeywordExtractionService:
         except Exception as e:
             logger.exception("Ошибка декодирования ключевых фраз.")
             raise RuntimeError(f"Ошибка декодирования: {e}")
-    

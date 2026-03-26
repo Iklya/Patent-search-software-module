@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from datetime import date
+
+from pydantic import BaseModel, Field
 
 from app.schemas.search_schemas.search_enums import SearchMode, SortOrder
 

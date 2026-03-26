@@ -2,7 +2,7 @@ from elasticsearch import AsyncElasticsearch, NotFoundError
 
 from app.services.patent_indexing.index_mapping import INDEX_MAPPING
 from app.core.logger import get_logger
-
+from app.core.settings import settings
 
 logger = get_logger(__name__)
 
@@ -14,12 +14,12 @@ class ElasticsearchService:
     выполнения низкоуровневых операций Elasticsearch.
     """
     def __init__(self):
-        self.client = AsyncElasticsearch(hosts=["http://elasticsearch:9200"])
+        self.client = AsyncElasticsearch(hosts=[settings.elasticsearch_url])
         self.index_name = "patents"
         self.meta_index = "index_meta"
         self.meta_doc_id = "patent_index_state"
     
-    
+
     async def create_index_if_not_exists(self):
         logger.debug(f"Проверка существования индекса {self.index_name}")
 

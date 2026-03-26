@@ -5,6 +5,9 @@ from app.core.database import Base
 
 
 class PatentInventor(Base):
+    """
+    Используется для задания SQLAlchemy-модели для таблицы PatentInventor
+    """
     __tablename__ = "patent_inventors"
 
     patent_id: Mapped[int] = mapped_column(

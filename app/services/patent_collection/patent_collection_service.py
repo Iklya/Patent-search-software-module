@@ -1,8 +1,10 @@
 import re
-from urllib.parse import quote
 from datetime import datetime, timedelta
 
+from urllib.parse import quote
+
 from app.core.logger import get_logger
+from app.core.settings import settings
 
 
 logger = get_logger(__name__)
@@ -15,8 +17,8 @@ class PatentCollectionService:
     """
     def __init__(self, page):
         self.page = page
-        self.base_url = "https://patents.google.com"
-        self.max_pages = 10
+        self.base_url = settings.google_patents_base_url
+        self.max_pages = settings.google_patents_max_pages
 
 
     async def collect_patent_links(
@@ -65,7 +67,7 @@ class PatentCollectionService:
         strftime_date,
         limit
     ):
-        logger.debug(f"Начат поиск патентов на дату {datetime.fromisoformat(strftime_date).date()}")
+        logger.debug(f"Начат поиск патентов на дату {datetime.strptime(strftime_date, '%Y%m%d')}")
 
         page_index = 0
         while len(results) < limit:
@@ -107,7 +109,7 @@ class PatentCollectionService:
             f"?after=publication:{strftime_date}"
             f"&before=publication:{strftime_date}"
             f"&language=RUSSIAN"
-            f"&num=100"
+            f"&num={settings.google_patents_results_per_page}"
             f"&page={page_index}"
         )
 
@@ -120,9 +122,15 @@ class PatentCollectionService:
     async def load_patents_page(self, search_url):
         logger.debug(f"Загрузка страницы поиска: {search_url}")
         
-        await self.page.goto(search_url, timeout=10000)
-        await self.page.wait_for_selector("search-result-item", timeout=5000)
-        await self.page.wait_for_timeout(2000)
+        await self.page.goto(
+            search_url,
+            timeout=settings.playwright_page_load_timeout
+        )
+        await self.page.wait_for_selector(
+            "search-result-item",
+            timeout=settings.playwright_selector_timeout
+        )
+        await self.page.wait_for_timeout(settings.playwright_scroll_wait)
 
 
     async def find_patent_links(self):

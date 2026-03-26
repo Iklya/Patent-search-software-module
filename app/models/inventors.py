@@ -5,6 +5,9 @@ from app.core.database import Base
 
 
 class Inventor(Base):
+    """
+    Используется для задания SQLAlchemy-модели для таблицы Inventor
+    """
     __tablename__ = "inventors"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

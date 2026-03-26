@@ -1,5 +1,3 @@
-from elasticsearch import NotFoundError
-
 from app.services.patent_indexing.elasticsearch_service import ElasticsearchService
 from app.services.patent_search.highlight_service import HighlightService
 from app.services.patent_search.patent_result_builder import PatentResultBuilder

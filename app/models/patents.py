@@ -1,12 +1,15 @@
+from datetime import datetime
+
 from sqlalchemy import Integer, String, Text, Date, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from datetime import datetime
 
 from app.core.database import Base
 
 
 class Patent(Base):
+    """
+    Используется для задания SQLAlchemy-модели для таблицы Patent
+    """
     __tablename__ = "patents"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

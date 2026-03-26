@@ -9,7 +9,7 @@ async def main():
     await es.delete_index()
     await es.client.close()
 
-    print("Индекс Elasticsearch был удален")
+    print("Индекс Elasticsearch был удален.")
 
 
 if __name__ == "__main__":

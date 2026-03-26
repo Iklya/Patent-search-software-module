@@ -1,6 +1,8 @@
 from fastapi import status, HTTPException, UploadFile
 
 from app.core.logger import get_logger
+from app.core.settings import settings
+
 
 logger = get_logger(__name__)
 
@@ -10,7 +12,7 @@ class TextFileReader:
     Используется для валидации и чтения входного текстового файла.
     """
     def __init__(self):
-        self.max_text_length = 10000
+        self.max_text_length = settings.file_text_max_length
 
 
     async def read(self, file: UploadFile) -> str:

@@ -5,6 +5,7 @@ from app.models.patents import Patent
 from app.services.patent_storage.hdfs_service import HDFSService
 from app.services.patent_indexing.elasticsearch_service import ElasticsearchService
 from app.core.logger import get_logger
+from app.core.settings import settings
 
 
 logger = get_logger(__name__)
@@ -18,7 +19,7 @@ class PatentIndexingService:
         self.session = session
         self.hdfs = HDFSService()
         self.es = ElasticsearchService()
-        self.documents_limit = 500
+        self.documents_limit = settings.indexing_batch_size
 
 
     async def index_all_patents(self):

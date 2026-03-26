@@ -1,6 +1,7 @@
+import re
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-import re
 
 from app.models.patents import Patent
 from app.services.patent_storage.hdfs_service import HDFSService

@@ -5,6 +5,9 @@ from app.core.database import Base
 
 
 class PatentClassification(Base):
+    """
+    Используется для задания SQLAlchemy-модели для таблицы PatentClassification
+    """
     __tablename__ = "patent_classifications"
 
     patent_id: Mapped[int] = mapped_column(

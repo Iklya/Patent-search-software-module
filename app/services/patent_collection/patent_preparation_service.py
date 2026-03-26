@@ -1,7 +1,8 @@
-from bs4 import BeautifulSoup
 from datetime import datetime
 import json
 import re
+
+from bs4 import BeautifulSoup
 
 from app.core.logger import get_logger
 

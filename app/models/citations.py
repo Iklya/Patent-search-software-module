@@ -5,6 +5,9 @@ from app.core.database import Base
 
 
 class Citation(Base):
+    """
+    Используется для задания SQLAlchemy-модели для таблицы Citation
+    """
     __tablename__ = "citations"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
