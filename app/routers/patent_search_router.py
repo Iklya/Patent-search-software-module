@@ -22,11 +22,14 @@ async def search_patents(
     service: PatentSearchService = Depends(get_patent_search_service)
 ):
     try:
-        total, results = await service.search(**request.model_dump(exclude_none=True))
+        result = await service.search(**request.model_dump(exclude_none=True))
 
         return PatentSearch(
-            total=total,
-            search_result=results)
+            total=result["total"],
+            page=result["page"],
+            page_size=result["page_size"],
+            search_result=result["results"]
+        )
     
     except RuntimeError as e:
         raise HTTPException(
@@ -34,8 +37,8 @@ async def search_patents(
             detail=str(e)
         )
     
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Не удалось выполнить поиск патентов."
+            detail=f"Не удалось выполнить поиск патентов. {e}"
         )

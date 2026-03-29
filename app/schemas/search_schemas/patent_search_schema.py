@@ -27,12 +27,8 @@ class PatentSearchCreate(BaseModel):
     publication_date_to: date = Field(None, description="Максимальная дата публикации")
     sort_field: str = Field(None, description="Поле, по которому будет проведена сортировка")
     sort_order: str = Field(default=SortOrder.desc,description="Режим сортировки")
-    size: int = Field(
-        default=50,
-        ge=1,
-        le=10000,
-        description="Максимальное количество найденных патентов"
-    )
+    page: int = Field(ge=1, description="Номер страницы")
+    page_size: int = Field(ge=5, description="Максимальное количество патентов на одной странице")
 
 
 class PatentSearch(BaseModel):
@@ -40,4 +36,6 @@ class PatentSearch(BaseModel):
     Pydantic-модель с описанием содержимого в теле ответа в результате извлечения ключевых фраз
     """
     total: int
+    page: int
+    page_size: int
     search_result: list[dict]

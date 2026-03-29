@@ -33,7 +33,12 @@ INDEX_MAPPING = {
                         "kind_code": {"type": "keyword"},
                         "title": {
                             "type": "text",
-                            "analyzer": "ru_analyzer"
+                            "analyzer": "ru_analyzer",
+                            "fields": {
+                                "keyword": {
+                                    "type": "keyword"
+                                }
+                            }
                         },
                         "abstract": {
                             "type": "text",

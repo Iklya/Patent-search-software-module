@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from app.routers.keyword_extraction_router import router as keyword_router
@@ -22,6 +23,14 @@ app = FastAPI(
 app.include_router(keyword_router)
 app.include_router(collection_router)
 app.include_router(search_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")

@@ -15,6 +15,7 @@ class HighlightService:
         query["highlight"] = {
             "pre_tags": ["<mark>"],
             "post_tags": ["</mark>"],
+            "max_analyzed_offset": 1000000,
             "fields": {
                 "title": {},
                 "abstract": {},

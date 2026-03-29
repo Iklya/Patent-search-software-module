@@ -38,7 +38,8 @@ class PatentSearchService:
         publication_date_to: str | None = None,
         sort_field: str | None = None,
         sort_order: str = "desc",
-        size: int = 50
+        page: int = 1,
+        page_size: int = 10
     ):
         try:
             logger.info("Начат процесс поиска патентов на основе поискового запроса.")
@@ -70,8 +71,11 @@ class PatentSearchService:
             self.add_date_fields_for_search(filter_query, filing_date_from,
                                             filing_date_to, publication_date_from, publication_date_to)
 
+            self.from_page = (page - 1) * page_size
+
             query = {
-                "size": size,
+                "from": self.from_page,
+                "size": page_size,
                 "query": {
                     "bool": {
                         "must": must,
@@ -99,7 +103,12 @@ class PatentSearchService:
 
             logger.info(f"Поиск завершен. Найдено результатов: {len(final_results)}")
 
-            return total_hits, final_results
+            return {
+                "total": total_hits,
+                "page": page,
+                "page_size": page_size,
+                "results": final_results
+            }
 
         finally:
             logger.info("Закрытие соединения Elasticsearch.")
@@ -203,13 +212,29 @@ class PatentSearchService:
     def add_sort_field_for_search(self, query, sort_field, sort_order):
         logger.debug("Добавление сортировки в запрос.")
 
-        if not sort_field:
-            logger.warning("Поле сортировки не указано.")
+        if not sort_field or not sort_order:
+            logger.debug("Сортировка не указана — используется релевантность.")
+            return
+
+        field_map = {
+            "publication_number": "publication_number",
+            "title": "title.keyword",
+            "application_number": "application_number",
+            "country_code": "country_code",
+            "kind_code": "kind_code",
+            "filing_date": "filing_date",
+            "publication_date": "publication_date"
+        }
+
+        es_field = field_map.get(sort_field)
+
+        if not es_field:
+            logger.warning(f"Неизвестное поле сортировки: {sort_field}")
             return
 
         query["sort"] = [
             {
-                sort_field: {
+                es_field: {
                     "order": sort_order
                 }
             }
