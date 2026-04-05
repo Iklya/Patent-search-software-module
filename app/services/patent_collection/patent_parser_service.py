@@ -18,8 +18,12 @@ class PatentParserService:
     Используется для управления процессом сбора одного и более патентов
     (запуск браузера, получение ссылок на патенты и автоматизированный сбор каждого из них)
     """
-    def __init__(self):
-        self.preparation_service = ParserPreparationService()
+    def __init__(self,
+                collection_service: PatentCollectionService | None = None,
+                preparation_service: ParserPreparationService | None = None
+    ):
+        self.collection_service = collection_service
+        self.preparation_service = preparation_service or ParserPreparationService()
 
 
     async def parse_patents(
@@ -35,7 +39,8 @@ class PatentParserService:
         p, browser, page = await self.create_browser_page()
         
         try:
-            self.collection_service = PatentCollectionService(page)
+            if not self.collection_service:
+                self.collection_service = PatentCollectionService(page)
 
             links = await self.collection_service.collect_patent_links(
                 query=query,

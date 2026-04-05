@@ -18,5 +18,5 @@ class PatentsLoadCreate(BaseModel):
         le=1000000,
         description="Максимальное число загружаемых патентов"
     )
-    date_from: date = Field(default="2004-10-02", description="Начальная дата публикации")
-    date_to: date = Field(default="2025-10-02", description="Конечная дата публикации")
+    date_from: date = Field(default=date(2004, 10, 2), description="Начальная дата публикации")
+    date_to: date = Field(default=date(2025, 10, 2), description="Конечная дата публикации")

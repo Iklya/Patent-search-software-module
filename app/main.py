@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import logging
 
 from app.routers.keyword_extraction_router import router as keyword_router
@@ -14,6 +15,21 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Запуск приложения и загрузка ML модели.")
+
+    svc = get_keyword_extraction_service()
+    svc.ensure_model_loaded()
+
+    logger.info("Модель успешно загружена.")
+
+    yield
+
+    logger.info("Завершение работы приложения.")
+
 
 app = FastAPI(
     title="Программный модуль патентного поиска",
@@ -36,13 +52,3 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"message": "Программный модуль патентного поиска!"}
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Запуск приложения и загрузка ML модели.")
-    
-    svc = get_keyword_extraction_service()
-    svc.ensure_model_loaded()
-    
-    logger.info("Модель успешно загружена.")

@@ -1,34 +1,6 @@
+version: "3.9"
+
 services:
-
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend.Dockerfile
-    volumes:
-      - ./frontend:/frontend
-      - /frontend/node_modules
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-
-  backend:
-    build:
-      context: .
-      dockerfile: backend.Dockerfile
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-    depends_on:
-      - postgres
-      - namenode
-      - datanode
-      - hdfs_init
-      - elasticsearch
-
   postgres:
     image: postgres:15
     restart: always
@@ -40,6 +12,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U patent_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
@@ -63,7 +40,6 @@ services:
 
   hdfs_init:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: hdfs_init
     depends_on:
       - namenode
     entrypoint: >
@@ -72,7 +48,7 @@ services:
       sleep 15;
       hdfs dfs -mkdir -p /patents;
       hdfs dfs -chmod -R 777 /patents;
-      echo 'Инициализация HDFS успешно завершена.';
+      echo 'HDFS готов.';
       "
 
   elasticsearch:
@@ -85,6 +61,59 @@ services:
       - "9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 10s
+      retries: 10
+
+  tests:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      hdfs_init:
+        condition: service_completed_successfully
+    command: >
+      sh -c "
+      echo 'Запуск тестов...' &&
+      pytest -v &&
+      echo 'Тесты успешно прошли'
+      "
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      tests:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_started
 
 volumes:
   postgres_data:
