@@ -1,360 +1,287 @@
 <template>
-
     <div class="block">
-    
-    <h3>
-    Ключевые фразы
-    <span v-if="loading">(Генерируются ключевые фразы...)</span>
-    </h3>
-    
-    <div class="keywords-container">
-    
-    <div
-    v-for="(k,i) in localKeywords"
-    :key="i"
-    class="keyword-box"
-    :class="{active:k.selected}"
-    @click="openEditor(i)"
-    >
-    
-    {{k.text}}
-    
+        <h3 class="center-title">
+            Выберите ключевые фразы для поиска
+        </h3>
+
+        <div class="keywords-container">
+            <div
+                v-for="(k, i) in localKeywords"
+                :key="i"
+                class="keyword-box"
+                :class="{ active: k.selected }"
+                @click="openEditor(i)"
+            >
+                {{ k.text }}
+            </div>
+        </div>
+
+        <div class="add-label">
+            Добавить новую ключевую фразу
+        </div>
+
+        <div class="add-row">
+            <input v-model="newKeyword" />
+
+            <button @click="addKeyword">
+                Добавить
+            </button>
+        </div>
+
+        <div
+            v-if="editorOpen"
+            class="confirm-overlay"
+            @click.self="editorOpen = false"
+        >
+            <div class="confirm-box">
+                <p class="confirm-title">
+                    Управление ключевой фразой
+                </p>
+
+                <input
+                    v-model="editedText"
+                    class="edit-input"
+                />
+
+                <div class="confirm-buttons">
+                    <button
+                        class="btn-edit"
+                        @click="saveEdit"
+                    >
+                        Изменить
+                    </button>
+
+                    <button
+                        class="btn-toggle"
+                        @click="toggleSelected"
+                    >
+                        {{ editedKeyword?.selected ? "Исключить" : "Включить" }}
+                    </button>
+
+                    <button
+                        class="btn-delete"
+                        @click="deleteKeyword"
+                    >
+                        Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    </div>
-    
-    <div class="add-row">
-    
-    <input v-model="newKeyword"/>
-    
-    <button @click="addKeyword">
-    Добавить
-    </button>
-    
-    </div>
-    
-    
-    <!-- окно редактирования -->
-    
-    <div
-    v-if="editorOpen"
-    class="confirm-overlay"
-    @click.self="editorOpen=false"
-    >
-    
-    <div class="confirm-box">
-    
-    <p class="confirm-title">
-    Управление ключевой фразой
-    </p>
-    
-    <input
-    v-model="editedText"
-    class="edit-input"
-    />
-    
-    <div class="confirm-buttons">
-    
-    <button
-    class="btn-edit"
-    @click="saveEdit"
-    >
-    Изменить
-    </button>
-    
-    <button
-    class="btn-toggle"
-    @click="toggleSelected"
-    >
-    {{ editedKeyword?.selected ? "Исключить" : "Включить" }}
-    </button>
-    
-    <button
-    class="btn-delete"
-    @click="deleteKeyword"
-    >
-    Удалить
-    </button>
-    
-    </div>
-    
-    </div>
-    
-    </div>
-    
-    </div>
-    
 </template>
-    
-    
+
 <script setup>
-    
     import { ref, watch } from "vue"
-    
+
+
     const props = defineProps({
-    keywords:Array,
-    loading:Boolean
+        keywords: Array,
+        loading: Boolean
     })
-    
+
     const emit = defineEmits(["update"])
-    
+
     const localKeywords = ref([])
-    
+
     watch(
-    () => props.keywords,
-    (v)=>{
-    localKeywords.value = v.map(k=>({
-    text:k.text,
-    selected:k.selected
-    }))
-    },
-    {immediate:true}
+        () => props.keywords,
+        v => {
+            localKeywords.value = v.map(k => ({
+                text: k.text,
+                selected: k.selected
+            }))
+        },
+        { immediate: true }
     )
-    
+
     const newKeyword = ref("")
-    
-    function addKeyword(){
-    
-    if(!newKeyword.value)
-    return
-    
-    const copy = [
-    ...localKeywords.value,
-    {
-    text:newKeyword.value,
-    selected:false
+
+
+    function addKeyword() {
+        if (!newKeyword.value) return
+
+        const copy = [
+            ...localKeywords.value,
+            {
+                text: newKeyword.value,
+                selected: false
+            }
+        ]
+
+        localKeywords.value = copy
+        newKeyword.value = ""
+
+        emit("update", copy)
     }
-    ]
-    
-    localKeywords.value = copy
-    
-    newKeyword.value=""
-    
-    emit("update", copy)
-    
-    }
-    
-    
-    
+
+
     const editorOpen = ref(false)
-    
     const editedIndex = ref(null)
-    
     const editedText = ref("")
-    
     const editedKeyword = ref(null)
-    
-    
-    
-    function openEditor(i){
-    
-    editedIndex.value = i
-    
-    editedKeyword.value = localKeywords.value[i]
-    
-    editedText.value = localKeywords.value[i].text
-    
-    editorOpen.value = true
-    
+
+
+    function openEditor(i) {
+        editedIndex.value = i
+        editedKeyword.value = localKeywords.value[i]
+        editedText.value = localKeywords.value[i].text
+        editorOpen.value = true
     }
-    
-    
-    
-    function saveEdit(){
-    
-    const copy = [...localKeywords.value]
-    
-    copy[editedIndex.value] = {
-    ...copy[editedIndex.value],
-    text: editedText.value
+
+
+    function saveEdit() {
+        const copy = [...localKeywords.value]
+
+        copy[editedIndex.value] = {
+            ...copy[editedIndex.value],
+            text: editedText.value
+        }
+
+        localKeywords.value = copy
+        emit("update", copy)
+
+        editorOpen.value = false
     }
-    
-    localKeywords.value = copy
-    
-    emit("update", copy)
-    
-    editorOpen.value = false
-    
+
+
+    function toggleSelected() {
+        const copy = [...localKeywords.value]
+
+        copy[editedIndex.value] = {
+            ...copy[editedIndex.value],
+            selected: !copy[editedIndex.value].selected
+        }
+
+        localKeywords.value = copy
+        emit("update", copy)
+
+        editedKeyword.value = copy[editedIndex.value]
     }
+
     
-    
-    
-    function toggleSelected(){
-    
-    const copy = [...localKeywords.value]
-    
-    copy[editedIndex.value] = {
-    ...copy[editedIndex.value],
-    selected: !copy[editedIndex.value].selected
+    function deleteKeyword() {
+        const copy = [...localKeywords.value]
+
+        copy.splice(editedIndex.value, 1)
+
+        localKeywords.value = copy
+        emit("update", copy)
+
+        editorOpen.value = false
     }
-    
-    localKeywords.value = copy
-    
-    emit("update", copy)
-    
-    editedKeyword.value = copy[editedIndex.value]
-    
-    }
-    
-    
-    
-    function deleteKeyword(){
-    
-    const copy = [...localKeywords.value]
-    
-    copy.splice(editedIndex.value,1)
-    
-    localKeywords.value = copy
-    
-    emit("update", copy)
-    
-    editorOpen.value = false
-    
-    }
-    
 </script>
-    
-    
+
 <style>
-    
-    .keywords-container{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:10px;
+    .keywords-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+        border: 2px solid black;
+        background: #ffffff;
+        padding: 10px;
+        border-radius: 8px;
     }
-    
-    .keyword-box{
-    
-    padding:6px 10px;
-    
-    border:2px solid #aaa;
-    
-    border-radius:6px;
-    
-    cursor:pointer;
-    
-    background:white;
-    
-    transition:0.2s;
-    
+
+    .keyword-box {
+        padding: 6px 10px;
+        border: 2px solid #aaa;
+        border-radius: 6px;
+        cursor: pointer;
+        background: white;
+        transition: 0.2s;
     }
-    
-    .keyword-box:hover{
-    background:#f5f5f5;
+
+    .keyword-box:hover {
+        background: #f5f5f5;
     }
-    
-    .keyword-box.active{
-    border-color:red;
+
+    .keyword-box.active {
+        border-color: red;
     }
-    
-    
-    .add-row{
-    display:flex;
-    gap:6px;
+
+    .add-row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
     }
-    
-    
-    .confirm-overlay{
-    
-    position:fixed;
-    
-    inset:0;
-    
-    background:rgba(0,0,0,0.2);
-    
-    display:flex;
-    
-    align-items:center;
-    
-    justify-content:center;
-    
-    z-index:1000;
-    
+
+    .add-row button {
+        background: #d2e27b;
+        border: 1px solid black;
+        border-radius: 10px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-weight: bold;
     }
-    
-    .confirm-box{
-    
-    background:#ECEDCD;
-    
-    padding:20px;
-    
-    border-radius:10px;
-    
-    width:420px;
-    
-    text-align:center;
-    
+
+    .add-row input {
+        width: 300px;
+        padding: 6px;
     }
-    
-    .confirm-title{
-    
-    font-weight:bold;
-    
-    margin-bottom:20px;
-    
+
+    .confirm-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
     }
-    
-    .edit-input{
-    
-    width:100%;
-    
-    padding:6px;
-    
-    margin-bottom:20px;
-    
+
+    .confirm-box {
+        background: #ecedcd;
+        padding: 20px;
+        border-radius: 10px;
+        width: 420px;
+        text-align: center;
     }
-    
-    .confirm-buttons{
-    
-    display:flex;
-    
-    justify-content:space-between;
-    
-    gap:10px;
-    
+
+    .confirm-title {
+        font-weight: bold;
+        margin-bottom: 20px;
     }
-    
-    .btn-edit{
-    
-    background:#D2E27B;
-    
-    border:none;
-    
-    padding:8px 14px;
-    
-    border-radius:6px;
-    
-    cursor:pointer;
-    
+
+    .edit-input {
+        width: 100%;
+        padding: 6px;
+        margin-bottom: 20px;
     }
-    
-    .btn-toggle{
-    
-    background:#E6E6E6;
-    
-    border:none;
-    
-    padding:8px 14px;
-    
-    border-radius:6px;
-    
-    cursor:pointer;
-    
+
+    .confirm-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
     }
-    
-    .btn-delete{
-    
-    background:#F57373;
-    
-    border:none;
-    
-    padding:8px 14px;
-    
-    border-radius:6px;
-    
-    cursor:pointer;
-    
+
+    .btn-edit {
+        background: #d2e27b;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
     }
-    
+
+    .btn-toggle {
+        background: #e6e6e6;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .btn-delete {
+        background: #f57373;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .add-label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        text-align: center;
+    }
 </style>

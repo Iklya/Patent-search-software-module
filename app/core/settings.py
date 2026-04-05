@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     elasticsearch_url: str
     indexing_batch_size: int
 
+    # Используется при пагинации в веб-интерфейсе
+    max_result_window: int
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

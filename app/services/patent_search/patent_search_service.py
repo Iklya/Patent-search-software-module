@@ -3,6 +3,7 @@ from app.services.patent_search.highlight_service import HighlightService
 from app.services.patent_search.patent_result_builder import PatentResultBuilder
 from app.core.database import async_session_maker
 from app.core.logger import get_logger
+from app.core.settings import settings
 
 
 logger = get_logger(__name__)
@@ -71,11 +72,19 @@ class PatentSearchService:
             self.add_date_fields_for_search(filter_query, filing_date_from,
                                             filing_date_to, publication_date_from, publication_date_to)
 
-            self.from_page = (page - 1) * page_size
+            from_page, size, is_out_of_range = self.apply_result_window(page, page_size)
+
+            if is_out_of_range:
+                return {
+                    "total": settings.max_result_window,
+                    "page": page,
+                    "page_size": page_size,
+                    "results": []
+                }
 
             query = {
-                "from": self.from_page,
-                "size": page_size,
+                "from": from_page,
+                "size": size,
                 "query": {
                     "bool": {
                         "must": must,
@@ -96,6 +105,7 @@ class PatentSearchService:
             )
 
             total_hits = response["hits"]["total"]["value"]
+            total_hits = min(total_hits, settings.max_result_window)
 
             search_results = self.highlight.extract_highlight_results(response)
 
@@ -207,6 +217,19 @@ class PatentSearchService:
             filter_query.append(
                 {"range": {"publication_date": range_query}}
             )
+
+
+    def apply_result_window(self, page: int, page_size: int):
+        from_page = (page - 1) * page_size
+        max_window = settings.max_result_window
+
+        if from_page >= max_window:
+            return from_page, 0, True
+
+        remaining = max_window - from_page
+        size = min(page_size, remaining)
+
+        return from_page, size, False
 
 
     def add_sort_field_for_search(self, query, sort_field, sort_order):
