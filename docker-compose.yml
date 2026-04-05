@@ -1,5 +1,17 @@
 services:
 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
   backend:
     build:
       context: .
@@ -28,7 +40,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  
+
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     environment:
