@@ -33,7 +33,11 @@ class PatentStorageService:
                 logger.warning("Пропущен патент без publication_number.")
                 continue
 
-            abstract_path, description_path, claims_path = self.hdfs.store_fulltext(p)
+            try:
+                abstract_path, description_path, claims_path = self.hdfs.store_fulltext(p)
+            except Exception as e:
+                logger.error(f"HDFS ошибка при сохранении патента {pub_number}: {e}")
+                continue
 
             inventors = []
 
@@ -56,7 +60,7 @@ class PatentStorageService:
             concepts = []
 
             for concept_name in p.get("concepts", []):
-                concept = Concept(name=concept_name)
+                concept = await self.pg.get_or_create_concept(concept_name)
                 concepts.append(concept)
 
             patent = Patent(
@@ -80,7 +84,12 @@ class PatentStorageService:
             self.session.add(patent)
             stored_patents_counter += 1
 
-        await self.session.commit()
+        try:
+            await self.session.commit()
+        except Exception as e:
+            await self.session.rollback()
+            logger.error(f"Ошибка при сохранении патентов: {e}")
+            raise
 
         logger.info(f"Сохранено патентов: {stored_patents_counter}")
 

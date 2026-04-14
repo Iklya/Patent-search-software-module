@@ -16,12 +16,13 @@ async def test_store_patents_success():
     svc = PatentStorageService(session)
 
     svc.hdfs = MagicMock()
-    svc.hdfs.store_fulltext = MagicMock(return_value=("/abstract.txt", "/claims.txt", "/description.txt"))
+    svc.hdfs.store_fulltext = MagicMock(return_value=("/abstract.txt", "/description.txt", "/claims.txt"))
 
     svc.pg = MagicMock()
     svc.pg.get_or_create_inventor = AsyncMock(return_value=MagicMock())
     svc.pg.get_or_create_classification = AsyncMock(return_value=MagicMock())
     svc.pg.get_or_create_citation = AsyncMock(return_value=MagicMock())
+    svc.pg.get_or_create_concept = AsyncMock(return_value=MagicMock())
 
     patents = [
         {

@@ -96,3 +96,35 @@ async def test_get_or_create_citation_new(pg_service):
     assert isinstance(result, Citation)
     assert result.publication_number == "EP9876543A"
     pg_service.session.add.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_or_create_concept_exists(pg_service):
+    from app.models.concepts import Concept
+    
+    mock_concept = MagicMock(spec=Concept)
+    mock_concept.name = "machine learning"
+    
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_concept)
+    pg_service.session.execute = AsyncMock(return_value=mock_result)
+
+    result = await pg_service.get_or_create_concept("machine learning")
+
+    assert result == mock_concept
+    pg_service.session.add.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_or_create_concept_new(pg_service):
+    from app.models.concepts import Concept
+    
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
+    pg_service.session.execute = AsyncMock(return_value=mock_result)
+
+    result = await pg_service.get_or_create_concept("neural network")
+
+    assert isinstance(result, Concept)
+    assert result.name == "neural network"
+    pg_service.session.add.assert_called_once()

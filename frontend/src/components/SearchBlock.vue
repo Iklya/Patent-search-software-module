@@ -134,7 +134,7 @@
             </div>
 
             <div class="field">
-                <label>Дата публикации заявк</label>
+                <label>Дата публикации заявки</label>
                 <div class="field-row">
                     <input
                         v-model="publication_date"

@@ -38,7 +38,7 @@ async def load_patents(
         await indexer.index_all_patents()
 
         return {
-            "message": f"Сбор {len(patents)} патентов выполнен успешно."
+            "message": f"Актуализация базы патентов новыми документами в размере {len(patents)} шт. выполнена успешно."
         }
 
     except ValueError as e:
