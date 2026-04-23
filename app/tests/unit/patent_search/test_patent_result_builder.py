@@ -38,7 +38,6 @@ async def test_build_results_success(builder):
             inventors=[],
             classifications=[],
             citations=[],
-            concepts=[],
             source_url="url",
             parsed_at=None
         )

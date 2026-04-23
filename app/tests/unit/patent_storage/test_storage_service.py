@@ -39,7 +39,6 @@ async def test_store_patents_success():
             "abstract": "abstract text",
             "claims": "claims text",
             "description": "description text",
-            "concepts": ["concept1", "concept2"],
             "source_url": "https://patents.google.com/patent/RU123456A",
             "parsed_at": "2024-01-01T00:00:00"
         }
@@ -118,7 +117,6 @@ async def test_store_patents_with_none_dates():
             "abstract": None,
             "claims": None,
             "description": None,
-            "concepts": [],
             "source_url": "https://patents.google.com/patent/RU123456A"
         }
     ]

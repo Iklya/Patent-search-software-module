@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.patent_collection.patent_parser_service import PatentParserService
 from app.services.patent_storage.patent_storage_service import PatentStorageService
 from app.services.patent_indexing.patent_indexing_service import PatentIndexingService
-from app.schemas.patent_collection_schema import PatentsLoadCreate
+from app.schemas.patent_collection_schema import PatentsLoadCreate, PatentUrlsRequest
 from app.dependencies import get_patent_parser_service
 from app.db_dependency import get_db_session
 
@@ -53,6 +53,41 @@ async def load_patents(
             detail="Не удалось выполнить загрузку патентов."
         )
     
+    finally:
+        if indexer:
+            await indexer.es.client.close()
+
+
+'''Дополнительный эндпоинт для патентного поиска
+    (позволяет сохранять в хранилища и индексировать конкретные патенты по ссылке)'''
+@router.post("/load-by-urls")
+async def load_patents_by_urls(
+    request: PatentUrlsRequest,
+    service: PatentParserService = Depends(get_patent_parser_service),
+    session: AsyncSession = Depends(get_db_session)
+):
+    try:
+        storage = PatentStorageService(session)
+        indexer = PatentIndexingService(session)
+
+        patents = await service.parse_patents_from_urls(
+            session=session,
+            urls=request.urls
+        )
+
+        await storage.store_patents(patents)
+        await indexer.index_all_patents()
+
+        return {
+            "message": f"Загружено патентов: {len(patents)}"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка загрузки патентов по URL: {e}"
+        )
+
     finally:
         if indexer:
             await indexer.es.client.close()

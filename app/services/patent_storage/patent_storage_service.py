@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from app.models.patents import Patent
-from app.models.concepts import Concept
 from app.services.patent_storage.hdfs_service import HDFSService
 from app.services.patent_storage.postgresql_service import PostgreSQLService
 from app.core.logger import get_logger
@@ -57,12 +56,6 @@ class PatentStorageService:
                 citation = await self.pg.get_or_create_citation(number)
                 citations.append(citation)
 
-            concepts = []
-
-            for concept_name in p.get("concepts", []):
-                concept = await self.pg.get_or_create_concept(concept_name)
-                concepts.append(concept)
-
             patent = Patent(
                 publication_number = pub_number,
                 application_number = p.get("application_number"),
@@ -78,7 +71,6 @@ class PatentStorageService:
                 inventors = inventors,
                 classifications = classifications,
                 citations = citations,
-                concepts = concepts
             )
 
             self.session.add(patent)

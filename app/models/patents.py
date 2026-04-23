@@ -30,11 +30,6 @@ class Patent(Base):
         nullable=False
     )
 
-    concepts: Mapped[list["Concept"]] = relationship(
-        back_populates="patent",
-        cascade="all, delete-orphan"
-    )
-
     inventors: Mapped[list["Inventor"]] = relationship(
         secondary="patent_inventors",
         back_populates="patents"

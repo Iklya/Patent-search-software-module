@@ -62,7 +62,6 @@ class PatentResultBuilder:
                 "abstract": abstract,
                 "claims": claims,
                 "description": description,
-                "concepts": [c.name for c in patent.concepts],
                 "source_url": patent.source_url,
                 "parsed_at": patent.parsed_at.isoformat() if patent.parsed_at else None
             })
@@ -82,7 +81,6 @@ class PatentResultBuilder:
                 selectinload(Patent.inventors),
                 selectinload(Patent.classifications),
                 selectinload(Patent.citations),
-                selectinload(Patent.concepts)
             )
         )
 

@@ -3,8 +3,6 @@ from sqlalchemy import select
 
 from app.services.patent_collection.patent_collection_service import PatentCollectionService
 from app.services.patent_collection.patent_preparation_service import ParserPreparationService
-from app.services.patent_storage.patent_storage_service import PatentStorageService
-from app.services.patent_indexing.patent_indexing_service import PatentIndexingService
 from app.models.patents import Patent
 from app.core.logger import get_logger
 from app.core.settings import settings
@@ -70,6 +68,36 @@ class PatentParserService:
         finally:
             await self.close_browser(p, browser)
 
+            logger.info(f"Парсинг завершен. Обработано патентов: {len(results)}")
+
+        return results
+    
+
+    async def parse_patents_from_urls(self, session, urls: list[str]):
+        results = []
+
+        p, browser, page = await self.create_browser_page()
+
+        try:
+            links = await self.filter_existing_links(session, urls)
+
+            for i, link in enumerate(links, start=1):
+                logger.debug(f"Парсинг патента {i}: {link}")
+
+                html = await self.fetch_page_html(page, link)
+
+                patent_json = self.preparation_service.prepare_patent_json(
+                    html,
+                    link
+                )
+
+                results.append(patent_json)
+
+                if i % 50 == 0:
+                    logger.info(f"Собрано {i} патентов.")
+
+        finally:
+            await self.close_browser(p, browser)
             logger.info(f"Парсинг завершен. Обработано патентов: {len(results)}")
 
         return results

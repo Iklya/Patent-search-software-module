@@ -20,3 +20,7 @@ class PatentsLoadCreate(BaseModel):
     )
     date_from: date = Field(default=date(2004, 10, 2), description="Начальная дата публикации")
     date_to: date = Field(default=date(2025, 10, 2), description="Конечная дата публикации")
+
+
+class PatentUrlsRequest(BaseModel):
+    urls: list[str]

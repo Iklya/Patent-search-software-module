@@ -3,8 +3,6 @@ from sqlalchemy import select
 from app.models.inventors import Inventor
 from app.models.classifications import Classification
 from app.models.citations import Citation
-from app.models.concepts import Concept
-from app.models.patents import Patent
 from app.core.logger import get_logger
 
 
@@ -77,25 +75,3 @@ class PostgreSQLService:
         self.session.add(obj)
 
         return obj
-
-
-    async def get_or_create_concept(self, name: str):
-        logger.debug(f"Поиск concept: {name}")
-
-        result = await self.session.execute(
-            select(Concept).where(Concept.name == name)
-        )
-        obj = result.scalar_one_or_none()
-
-        if obj:
-            logger.debug(f"Concept найден: {name}")
-            return obj
-
-        logger.debug(f"Создание нового concept: {name}")
-
-        obj = Concept(name=name)
-        self.session.add(obj)
-
-        return obj
-    
-    
