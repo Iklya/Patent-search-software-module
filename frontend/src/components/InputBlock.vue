@@ -1,7 +1,7 @@
 <template>
     <div class="block">
         <h3 class="center-title">
-            Выберите способ поиска патентов-аналогов
+            Выберите способ ввода исходных данных
         </h3>
 
         <div class="mode-buttons">
