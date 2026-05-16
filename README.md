@@ -16,7 +16,7 @@
 Обеспечивает сбор, распределённое хранение, индексирование и полнотекстовый поиск с применением NLP-моделей (например, `keyT5-large`).
 
 > **Важно:** Обученная NLP-модель (`keyT5-large`) не загружена в репозиторий из-за большого размера.  
-> Скачайте архив с моделью по ссылке: [Google Диск]([https://drive.google.com/drive/folders/your-link-here](https://drive.google.com/drive/folders/1y_B6BScSDzHZcsvtMz0yGFD7cOK_VZ7_?usp=drive_link))  
+> Скачайте модель с [Google Диска](https://drive.google.com/drive/folders/1y_B6BScSDzHZcsvtMz0yGFD7cOK_VZ7_?usp=drive_link) (архив содержит файлы `config.json`, `spiece.model`, `tokenizer_config.json` и др.).  
 > После скачивания распакуйте содержимое в директорию `app/ml_models/`. Итоговый путь должен выглядеть так: `app/ml_models/keyt5_patent/`.
 ---
 
